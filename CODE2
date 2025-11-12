@@ -1,0 +1,199 @@
+<<%@ page import="java.util., com.example." %>
+<%
+    // Retrieve TaskManager instance from application scope
+    TaskManager manager = (TaskManager) application.getAttribute("manager");
+    if (manager == null) {
+        manager = new TaskManager();
+        application.setAttribute("manager", manager);
+    }
+
+    // Handle form submission
+    String title = request.getParameter("title");
+    String loadStr = request.getParameter("load");
+    if (title != null && !title.isBlank() && loadStr != null) {
+        try {
+            int load = Integer.parseInt(loadStr);
+            if (load >= 1 && load <= 10) {
+                manager.addTask(new Task(title, load));
+            }
+        } catch (NumberFormatException e) {
+            out.println("<p style='color:red;text-align:center;'>Invalid load. Enter 1–10.</p>");
+        }
+    }
+
+    List<Task> tasks = manager.getTasks();
+    int totalLoad = manager.getTotalCognitiveLoad();
+%>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cognitive Load Task Manager</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #F8FAFC;
+            color: #111827;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: linear-gradient(90deg, #2563EB, #60A5FA);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            margin: 30px auto;
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        form {
+            margin-bottom: 30px;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #CBD5E1;
+            margin-right: 10px;
+            width: 40%;
+        }
+
+        input[type="submit"] {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background-color: #2563EB;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #1D4ED8;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #F1F5F9;
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-load {
+            font-weight: bold;
+            color: #2563EB;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #E2E8F0;
+            border-radius: 20px;
+            overflow: hidden;
+            height: 25px;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #22C55E, #F59E0B, #EF4444);
+            width: <%= totalLoad %>%;
+            transition: width 0.4s ease;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #6B7280;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            input[type="text"], input[type="number"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🧠 Cognitive Load Task Manager</h1>
+    </header>
+
+    <div class="container">
+        <h2>Add a New Task</h2>
+        <form method="post">
+            <input type="text" name="title" placeholder="Enter task name" required />
+            <input type="number" name="load" min="1" max="10" placeholder="Load (1–10)" required />
+            <input type="submit" value="Add Task" />
+        </form>
+
+        <h2>Current Tasks</h2>
+        <%
+            if (tasks.isEmpty()) {
+        %>
+            <p>No tasks added yet. Start by adding one above!</p>
+        <%
+            } else {
+        %>
+            <ul>
+                <% for (Task t : tasks) { %>
+                    <li>
+                        <span><%= t.getTitle() %></span>
+                        <span class="task-load">Load: <%= t.getCognitiveLoad() %></span>
+                    </li>
+                <% } %>
+            </ul>
+        <%
+            }
+        %>
+
+        <div class="progress-container">
+            <h2>Total Cognitive Load: <%= totalLoad %> / 100</h2>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>© 2025 Bhavishya Khurana — Made with ☕ + 💻</footer>
+
+    <script>
+        // Animate progress bar width dynamically
+        const fill = document.querySelector('.progress-fill');
+        fill.style.width = '<%= Math.min(totalLoad, 100) %>%';
+    </script>
+
+</body>
+</html>
