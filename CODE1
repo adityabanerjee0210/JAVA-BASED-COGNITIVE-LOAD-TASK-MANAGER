@@ -1,0 +1,132 @@
+import java.util.*;
+
+public class MainAppConsole {
+
+    private static final TaskManager manager = new TaskManager();
+    private static final Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println("🧠 Cognitive Load Task Manager (Console Version)");
+
+        // Map menu options to actions
+        Map<String, Runnable> menuActions = new HashMap<>();
+        menuActions.put("1", MainAppConsole::addTask);
+        menuActions.put("2", MainAppConsole::viewTasks);
+        menuActions.put("3", MainAppConsole::viewTotalCognitiveLoad);
+        menuActions.put("0", () -> {
+            System.out.println("Exiting... Goodbye!");
+            throw new StopProgramException();
+        });
+
+        while (true) {
+            showMenu();
+            String choice = scanner.nextLine().trim();
+            menuActions.getOrDefault(choice,
+                    () -> System.out.println("Invalid option. Try again.")).run();
+        }
+    }
+
+    private static void showMenu() {
+        List<String> options = Arrays.asList(
+                "1. Add Task",
+                "2. View Tasks",
+                "3. View Total Cognitive Load",
+                "0. Exit"
+        );
+        System.out.println("\nMenu:");
+        options.forEach(System.out::println);
+        System.out.print("Choose an option: ");
+    }
+
+    private static void addTask() {
+        String title = promptNonEmpty("Enter task name: ");
+        int load = promptIntInRange("Enter cognitive load (1–10): ", 1, 10);
+
+        Task task = new Task(title, load);
+        manager.addTask(task);
+        System.out.println("Task added: " + task);
+    }
+
+    private static void viewTasks() {
+        List<Task> tasks = manager.getTasks();
+        Optional.of(tasks)
+                .filter(list -> !list.isEmpty())
+                .ifPresentOrElse(
+                        list -> {
+                            System.out.println("\nTasks:");
+                            list.forEach(t -> System.out.println(" - " + t));
+                        },
+                        () -> System.out.println("No tasks added yet.")
+                );
+    }
+
+    private static void viewTotalCognitiveLoad() {
+        System.out.println("Total Cognitive Load: " + manager.getTotalCognitiveLoad());
+    }
+
+    // Utility method to prompt non-empty string
+    private static String promptNonEmpty(String message) {
+        String input;
+        do {
+            System.out.print(message);
+            input = scanner.nextLine().trim();
+        } while (input.isEmpty());
+        return input;
+    }
+
+    // Utility method to prompt integer in a range
+    private static int promptIntInRange(String message, int min, int max) {
+        int value;
+        while (true) {
+            try {
+                System.out.print(message);
+                value = Integer.parseInt(scanner.nextLine());
+                if (value < min || value > max) throw new NumberFormatException();
+                return value;
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Enter a number between " + min + " and " + max + ".");
+            }
+        }
+    }
+
+    // Custom unchecked exception to exit program
+    private static class StopProgramException extends RuntimeException {}
+
+}
+
+// --- Task class ---
+class Task {
+    private final String title;
+    private final int cognitiveLoad;
+
+    public Task(String title, int cognitiveLoad) {
+        this.title = title;
+        this.cognitiveLoad = cognitiveLoad;
+    }
+
+    public int getCognitiveLoad() {
+        return cognitiveLoad;
+    }
+
+    @Override
+    public String toString() {
+        return title + " [Load: " + cognitiveLoad + "]";
+    }
+}
+
+// --- TaskManager class ---
+class TaskManager {
+    private final List<Task> tasks = new ArrayList<>();
+
+    public void addTask(Task task) {
+        tasks.add(task);
+    }
+
+    public List<Task> getTasks() {
+        return new ArrayList<>(tasks);
+    }
+
+    public int getTotalCognitiveLoad() {
+        return tasks.stream().mapToInt(Task::getCognitiveLoad).sum();
+    }
+}
